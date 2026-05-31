@@ -142,6 +142,13 @@ runs:
     - name: Run fit-eval
       shell: bash
       env:
+        # The agent runs in bypass-permissions mode
+        # (--dangerously-skip-permissions), which Claude Code refuses under
+        # uid 0 unless the process is marked sandboxed. CI containers may run
+        # as root, so mark the run sandboxed; the SDK forwards this env to the
+        # spawned Claude Code process. Harmless on non-root runners. Without it
+        # the agent exits 1 with no output before its first turn.
+        IS_SANDBOX: "1"
         MODE: ${{ inputs.mode }}
         TASK_FILE: ${{ inputs.task-file }}
         TASK_TEXT: ${{ inputs.task-text }}
