@@ -32,13 +32,13 @@ inputs:
     required: false
     default: "."
   agent-model:
-    description: Claude model for agents (all modes)
+    description: Claude model for agents (all modes); empty uses the fit-eval CLI default
     required: false
-    default: "claude-opus-4-7[1m]"
+    default: ""
   lead-model:
-    description: Claude model for the lead role (supervisor / facilitator / chair) — used by supervise, facilitate, and discuss modes
+    description: Claude model for the lead role (supervisor / facilitator / chair) — used by supervise, facilitate, and discuss modes; empty uses the fit-eval CLI default
     required: false
-    default: "claude-opus-4-7[1m]"
+    default: ""
   max-turns:
     description: Maximum turns (0 = unlimited)
     required: false
@@ -229,10 +229,16 @@ runs:
         # treats "0" as unlimited, while omitting the flag silently falls
         # back to the SDK's ~50-turn cap.
         args+=("--max-turns=$MAX_TURNS")
-        args+=("--agent-model=$AGENT_MODEL")
+        # Model flags are omitted when empty so the CLI defaults
+        # (@forwardimpact/libutil/models) stay the single source of truth.
+        if [ -n "$AGENT_MODEL" ]; then
+          args+=("--agent-model=$AGENT_MODEL")
+        fi
 
         if [ "$MODE" = "supervise" ]; then
-          args+=("--lead-model=$LEAD_MODEL")
+          if [ -n "$LEAD_MODEL" ]; then
+            args+=("--lead-model=$LEAD_MODEL")
+          fi
           if [ -n "$LEAD_PROFILE" ]; then
             args+=("--lead-profile=$LEAD_PROFILE")
           fi
@@ -251,7 +257,9 @@ runs:
             --allowed-tools="$TOOLS" \
             "${args[@]}"
         elif [ "$MODE" = "facilitate" ]; then
-          args+=("--lead-model=$LEAD_MODEL")
+          if [ -n "$LEAD_MODEL" ]; then
+            args+=("--lead-model=$LEAD_MODEL")
+          fi
           if [ -n "$LEAD_PROFILE" ]; then
             args+=("--lead-profile=$LEAD_PROFILE")
           fi
@@ -262,7 +270,9 @@ runs:
             --agent-cwd="$AGENT_CWD" \
             "${args[@]}"
         elif [ "$MODE" = "discuss" ]; then
-          args+=("--lead-model=$LEAD_MODEL")
+          if [ -n "$LEAD_MODEL" ]; then
+            args+=("--lead-model=$LEAD_MODEL")
+          fi
           if [ -n "$LEAD_PROFILE" ]; then
             args+=("--lead-profile=$LEAD_PROFILE")
           fi
